@@ -9,7 +9,14 @@ import { RegisterPageComponent } from './register-page/register-page.component';
 import { RegisteredUsersComponent } from './registered-users/registered-users.component';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { AngularSlickgridModule } from 'angular-slickgrid';
+import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
+import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 
+// Function to create the TranslateLoader using HttpClient
+export function HttpLoaderFactory(http: HttpClient) {
+  return new TranslateHttpLoader(http, './assets/i18n/', '.json');  // Path where your translation files are stored
+}
 @NgModule({
   declarations: [
     AppComponent,
@@ -22,7 +29,15 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
     BrowserModule,
     AppRoutingModule,
     FormsModule,
-    HttpClientModule
+    HttpClientModule,
+    AngularSlickgridModule.forRoot(),
+    TranslateModule.forRoot({
+      loader: {
+        provide: TranslateLoader,
+        useFactory: HttpLoaderFactory,
+        deps: [HttpClient]
+      }
+    })
   ],
   providers: [HttpClient],
   bootstrap: [AppComponent]

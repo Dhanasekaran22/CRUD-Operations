@@ -35,9 +35,14 @@
               "src/assets"
             ],
             "styles": [
+              "node_modules/slickgrid//dist/styles/css/slick.grid.css",
+           "node_modules/@slickgrid-universal/common/dist/styles/css/slickgrid-theme-bootstrap.css",
               "src/styles.css"
             ],
-            "scripts": []
+            "scripts": [
+               "node_modules/jquery/dist/jquery.min.js",
+              "node_modules/jquery-ui/dist/jquery-ui.min.js"
+            ]
           },
           "configurations": {
             "production": {
