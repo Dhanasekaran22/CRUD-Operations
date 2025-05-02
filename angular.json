@@ -35,8 +35,9 @@
               "src/assets"
             ],
             "styles": [
-              "node_modules/slickgrid//dist/styles/css/slick.grid.css",
-           "node_modules/@slickgrid-universal/common/dist/styles/css/slickgrid-theme-bootstrap.css",
+              "node_modules/slickgrid/dist/styles/css/slick.grid.css",
+              "node_modules/@slickgrid-universal/common/dist/styles/css/slickgrid-theme-bootstrap.css",
+              "node_modules/font-awesome/css/font-awesome.min.css",
               "src/styles.css"
             ],
             "scripts": [

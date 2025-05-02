@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CouchdbService } from '../couchdb.service';
-import { AngularGridInstance, Column, GridOption, OnClickEventArgs } from 'angular-slickgrid';
-import { TranslateService } from '@ngx-translate/core';
+import { AngularGridInstance, Column, GridOption, FieldType } from 'angular-slickgrid';
 
 @Component({
   selector: 'app-registered-users',
@@ -9,10 +8,10 @@ import { TranslateService } from '@ngx-translate/core';
   styleUrls: ['./registered-users.component.css']
 })
 export class RegisteredUsersComponent implements OnInit {
-
-  users: any[] = [];
+  angularGrid!: AngularGridInstance;
+  gridOptions!: GridOption;
   columnDefinitions: Column[] = [];
-  gridOptions: GridOption = {};
+  dataset: any[] = [];
   isEditing = false;
 
   editUserData: any = {
@@ -23,79 +22,103 @@ export class RegisteredUsersComponent implements OnInit {
     password: ''
   };
 
-  constructor(
-    private couch: CouchdbService,
-    private translate: TranslateService // Directly inject TranslateService here
-  ) {}
+  constructor(private couch: CouchdbService) {}
 
   ngOnInit(): void {
-    this.initializeGrid();
+    this.prepareGrid();
     this.fetchUsers();
   }
 
-  initializeGrid() {
+  prepareGrid() {
     this.columnDefinitions = [
-      { id: 'username', name: 'Username', field: 'username', sortable: true },
-      { id: 'email', name: 'Email', field: 'email', sortable: true },
-      { id: 'password', name: 'Password', field: 'password', sortable: true },
+      {
+        id: 'username',
+        name: 'Username',
+        field: 'username',
+        sortable: true,
+        filterable: true,
+        type: FieldType.string,
+        minWidth: 100,
+      },
+      {
+        id: 'email',
+        name: 'Email',
+        field: 'email',
+        sortable: true,
+        filterable: true,
+        type: FieldType.string,
+        minWidth: 150,
+      },
+      {
+        id: 'password',
+        name: 'Password',
+        field: 'password',
+        sortable: true,
+        filterable: true,
+        type: FieldType.string,
+        minWidth: 100,
+      },
       {
         id: 'actions',
         name: 'Actions',
-        field: '',
-        formatter: () => `
-          <button class="btn-edit">Edit</button>
-          <button class="btn-delete">Delete</button>
-        `,
-        sortable: false,
-        excludeFromExport: true
+        field: 'id',
+        excludeFromColumnPicker: true,
+        excludeFromExport: true,
+        excludeFromQuery: true,
+        excludeFromHeaderMenu: true,
+        formatter: () => `<button class="btn-edit">Edit</button> <button class="btn-delete">Delete</button>`,
+        minWidth: 120,
+        maxWidth: 120,
+        onCellClick: (e: Event, args: any) => {
+          const target = e.target as HTMLElement;
+          const item = args.dataContext;
+          
+          if (target.classList.contains('btn-edit')) {
+            this.startEdit(item);
+          } else if (target.classList.contains('btn-delete')) {
+            if (confirm('Are you sure you want to delete this user?')) {
+              this.deleteUser(item._id, item._rev);
+            }
+          }
+        }
       }
     ];
 
     this.gridOptions = {
+      autoResize: {
+        container: '#grid-container',
+        rightPadding: 10
+      },
+      
+      enableFiltering: true,
       enableSorting: true,
       enableCellNavigation: true,
-      // enableAutoResize: true,
-      // autoFitColumnsOnFirstLoad: true,
-      // enableColumnReorder: false
+      editable: false,
+      autoEdit: false,
+      enableExcelCopyBuffer: true,
+      rowHeight: 33,
+      headerRowHeight: 35,
+      enablePagination: true,
+      pagination: {
+        pageSizes: [10, 20, 50],
+        pageSize: 5,
+        totalItems: 0 
+      },
     };
   }
 
-  gridReady(grid:AngularGridInstance) {
-    // const angularGrid = grid ;
-    const slickGrid = grid?.slickGrid;
-
-    if (!slickGrid) {
-      console.error('Grid not initialized');
-      return;
-    }
-
-    // Ensure the grid is ready and then apply autosizeColumns
-    // setTimeout(() => {
-    //   if (slickGrid) {
-    //     slickGrid.autosizeColumns();
-    //   }
-    // }, 100); // Delay to ensure the grid is initialized
-
-    // Attach row action events
-    slickGrid.onClick.subscribe((event: Event, args: OnClickEventArgs) => {
-      const target = event.target as HTMLElement;
-      const rowItem = this.users[args.row];
-
-      if (target.classList.contains('btn-edit')) {
-        this.startEdit(rowItem);
-      } else if (target.classList.contains('btn-delete')) {
-        this.deleteUser(rowItem._id, rowItem._rev);
-      }
-    });
+  onAngularGridCreated(angularGrid: any) {
+    this.angularGrid = angularGrid;
   }
 
   fetchUsers() {
     this.couch.getUsers().subscribe({
       next: (response: any) => {
-        this.users = response.rows.map((row: any, index: number) => {
-          row.doc.id = index;
-          return row.doc;
-        });
+        // Map CouchDB documents to include both id and _id
+        this.dataset = response.rows.map((row: any) => ({
+          ...row.doc,
+          id: row.doc._id // Add id property required by SlickGrid
+        }));
       },
       error: (err) => {
         console.log("Error fetching users:", err.message);
